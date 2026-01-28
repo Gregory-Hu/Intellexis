@@ -1,2 +1,2 @@
 # Intellexis
-Intellect Axis system prototype
+Intellect Axis, system prototype

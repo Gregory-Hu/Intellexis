@@ -4,8 +4,8 @@
 | 日期   | 任务                                     | 交付物               |状态|
 | ---- | -------------------------------------- | ----------------- |--|
 | 周一晚  | 项目初始化，目录结构（按新分层）                       | pyproject.toml，骨架 |done|
-| 周二晚  | `state_models.py`（不可变 / 可变区分）          | 核心状态模型            |doing|
-| 周三晚  | `WorkbenchContext` + `workbench.py` 框架 | 中枢调度骨架            |
+| 周二晚  | `state_models.py`（不可变 / 可变区分）          | 核心状态模型            |done|
+| 周三晚  | `WorkbenchContext` + `workbench.py` 框架 | 中枢调度骨架            | done |
 | 周四晚  | `BaseStep / StepResult / StepRegistry` | Step ABI          |
 | 周五晚  | DummyStep + 虚拟执行                       | 可跑的最小执行           |
 | 周六全天 | CLI（init / run / list-step）            | 最小 CLI            |

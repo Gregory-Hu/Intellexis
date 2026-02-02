@@ -51,13 +51,30 @@ MVP 阶段核心目标
 上层只依赖下层，不允许反向调用
 
 3. 代码目录结构说明
+```
 src/
-├── agents/          # 各类智能体（有策略、有推理）
+├── agents/                # 各类智能体（策略 / 推理）
+│   ├── modeling/
+│   ├── task/
+│   └── requirement/
+│
+├── world_model/           # 工程世界模型（纯数据 + schema）
+│   └── world.py
+│
 ├── lib/
-│   ├── sops/        # SOP 定义（流程级）
-│   └── skills/      # Skill 实现（原子工程能力）
-├── runtime/         # 智能体运行时与调度
-└── world_model/     # 工程世界模型（纯数据）
+│   ├── sops/
+│   └── skills/
+│
+├── system/                # 系统内核（长期存在）
+│   ├── engineering_system.py
+│   └── __init__.py
+│
+├── runtime/               # 运行时（会话 / 一次执行）
+│   ├── engineering_runtime.py
+│   └── __init__.py
+│
+└── app.py / cli.py / api.py
+```
 
 4. 各层详细设计
 4.1 world_model —— 工程世界模型层（Layer 0）

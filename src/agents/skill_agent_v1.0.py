@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from enum import Enum, auto
 from typing import Optional, Any, Dict, List
 import tempfile
@@ -8,6 +8,7 @@ from pathlib import Path
 from datetime import datetime
 
 from base_agent import BaseAgent  
+from chant_agent import ChatAgent
 
 # ========== Agent State/Data Define ==========
 class AgentState(Enum):
@@ -44,6 +45,15 @@ class RuntimeState:
     current_step: Optional[str] = None
     step_progress: float = 0.0
     error: Optional[str] = None
+
+@dataclass
+class AlignmentEvent:
+    reason: str                       # 为什么要打断
+    report: str                       # AI 当前理解 & 状态
+    questions: List[str]              # 需要人类回答的问题
+    human_responses: Dict[str, Any] = field(default_factory=dict)
+    aligned_understanding: Optional[str] = None
+    timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
 
 
 # ========== Logger Setup ==========
@@ -143,7 +153,7 @@ class SkillAgent:
         start_time = time.time()
 
         try:
-            result = self._execute(task, task_input or {})
+            result = self._execute(task)
             self._exit_run(success=True, result=result)
             return result
 
@@ -156,7 +166,7 @@ class SkillAgent:
             self._update_metrics(elapsed)   
 
 
-    def _execute(self, task: str,) -> Any:
+    def _execute(self, task: str) -> Any:
         """
         实际技能逻辑（子类可 override）
         """
@@ -166,19 +176,51 @@ class SkillAgent:
         response = self.base_agent.run(prompt)
         return response
 
-    def _build_prompt(self, task: str, task_input: Dict[str, Any]) -> str:
-
+    def _build_prompt(self, task: str, snapshot: Optional[TaskSnapshot]) -> str:
+        if snapshot is None:
+            snapshot_info = "No task snapshot available."
+        else:
+            snapshot_dict = asdict(snapshot)
+            snapshot_info = "\n".join(f"{k}: {v}" for k, v in snapshot_dict.items())
+        
         prompt = f"""
                   You are a skill agent named '{self.skill_name}'.
   
                   Task:
                   {task}
   
-                  Input:
-                  {task_input}
+                  Task Snapshot:
+                  {snapshot_info}
                   """            
         return prompt
     
+    # ------------------------
+    # Human Collaboration
+    # ------------------------
+    def request_alignment(
+        self,
+        reason: str,
+        report: str,
+        questions: List[str],
+    ) -> AlignmentEvent:
+        chat_agent = ChatAgent(
+            agent_id=f"{self.agent_id}_chat_{len(self.memory.execution_history)}"
+        )
+
+        event = AlignmentEvent(
+            reason=reason,
+            report=report,
+            questions=questions,
+        )
+
+        aligned_event = chat_agent.start_alignment(event)
+
+        # 记录到 memory（非常重要）
+        self.memory.checkpoints["alignment"] = aligned_event
+
+        return aligned_event
+
+
     # ------------------------
     # Lifecycle
     # ------------------------
@@ -208,18 +250,22 @@ class SkillAgent:
             self.runtime.state = AgentState.DONE if success else AgentState.ERROR
             self.runtime.error = error
 
+            # 记录完整快照到memory（关键价值点）
             self.memory.record_execution(
                 {
                     "task": self.runtime.current_task,
+                    "snapshot": asdict(self.runtime.task_snapshot) if self.runtime.task_snapshot else {},
                     "success": success,
                     "result": result,
                     "error": error,
+                    "timestamp": datetime.now().isoformat(),
                 }
             )
 
             self.runtime.current_task = None
             self.runtime.current_step = None
             self.runtime.step_progress = 0.0
+            self.runtime.task_snapshot = None
     
     # ------------------------
     # Metrics

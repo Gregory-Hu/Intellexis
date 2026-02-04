@@ -64,3 +64,5 @@ FOR each ROOT in VHSG:
 不是“看完整个文件”
 
 而是 “按语义责任区块推进”
+
+![alt text](image.png)

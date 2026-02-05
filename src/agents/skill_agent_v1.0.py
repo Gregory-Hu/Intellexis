@@ -174,6 +174,8 @@ class SkillAgent:
         prompt = self._build_prompt(task, snapshot)
 
         response = self.base_agent.run(prompt)
+
+        
         return response
 
     def _build_prompt(self, task: str, snapshot: Optional[TaskSnapshot]) -> str:
